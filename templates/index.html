@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>TSP con Flask</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            background-color: #ffe6e6;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+        h1, h2 {
+            color: #c0392b;
+            margin-bottom: 20px;
+        }
+        input {
+            width: 90%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 2px solid #c0392b;
+            border-radius: 8px;
+            outline: none;
+        }
+        button {
+            background-color: #c0392b;
+            color: white;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #e74c3c;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 10px 0;
+        }
+        li {
+            background-color: #f8d7da;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 8px;
+            color: #721c24;
+        }
+        #resultado p {
+            background-color: #f1c40f;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Agregar Ciudades</h1>
+        <input type="text" id="nombre" placeholder="Nombre">
+        <input type="text" id="lat" placeholder="Latitud">
+        <input type="text" id="lon" placeholder="Longitud">
+        <button id="agregar">Agregar Ciudad</button>
+
+        <h2>Ciudades Agregadas</h2>
+        <ul id="lista-ciudades"></ul>
+
+        <button id="resolver">Resolver </button>
+
+        <h2>Resultado</h2>
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        function cargarCiudades() {
+            $.get('/get_cities', function(data) {
+                $('#lista-ciudades').empty();
+                data.ciudades.forEach(function(ciudad) {
+                    $('#lista-ciudades').append('<li>' + ciudad + '</li>');
+                });
+            });
+        }
+
+        $(document).ready(function() {
+            cargarCiudades();
+
+            $('#agregar').click(function() {
+                const nombre = $('#nombre').val();
+                const lat = $('#lat').val();
+                const lon = $('#lon').val();
+                if (!nombre || !lat || !lon) {
+                    alert('Por favor completa todos los campos.');
+                    return;
+                }
+                $.ajax({
+                    url: '/add_city',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({nombre, lat, lon}),
+                    success: function(data) {
+                        cargarCiudades();
+                        $('#nombre').val('');
+                        $('#lat').val('');
+                        $('#lon').val('');
+                    }
+                });
+            });
+
+            $('#resolver').click(function() {
+                $.get('/solve', function(data) {
+                    if (data.error) {
+                        $('#resultado').html('<p>' + data.error + '</p>');
+                    } else {
+                        $('#resultado').html('<p><strong>Ruta:</strong> ' + data.ruta.join(' → ') + '</p><p><strong>Distancia Total:</strong> ' + data.distancia.toFixed(4) + '</p>');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
